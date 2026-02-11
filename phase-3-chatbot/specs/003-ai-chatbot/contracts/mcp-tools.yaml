@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: MCP Tools Specification
+  description: Model Context Protocol (MCP) tools for task management operations
+  version: 1.0.0
+
+components:
+  schemas:
+    # Tool: add_task
+    AddTaskInput:
+      type: object
+      required:
+        - user_id
+        - title
+      properties:
+        user_id:
+          type: string
+          description: Authenticated user's ID
+          example: "user_123"
+        title:
+          type: string
+          description: Task title
+          minLength: 1
+          maxLength: 200
+          example: "Buy groceries"
+        description:
+          type: string
+          description: Optional task description
+          maxLength: 1000
+          example: "Milk, eggs, bread"
+
+    AddTaskOutput:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          description: ID of the created task
+          example: 456
+        status:
+          type: string
+          enum: [created]
+          description: Operation status
+          example: "created"
+        title:
+          type: string
+          description: Task title (confirmation)
+          example: "Buy groceries"
+
+    # Tool: list_tasks
+    ListTasksInput:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          description: Authenticated user's ID
+          example: "user_123"
+        status:
+          type: string
+          enum: [all, pending, completed]
+          default: all
+          description: Filter tasks by completion status
+          example: "pending"
+
+    ListTasksOutput:
+      type: object
+      required:
+        - tasks
+        - count
+      properties:
+        tasks:
+          type: array
+          description: List of tasks matching the filter
+          items:
+            $ref: '#/components/schemas/Task'
+        count:
+          type: integer
+          description: Total number of tasks returned
+          example: 2
+
+    # Tool: complete_task
+    CompleteTaskInput:
+      type: object
+      required:
+        - user_id
+        - task_id
+      properties:
+        user_id:
+          type: string
+          description: Authenticated user's ID
+          example: "user_123"
+        task_id:
+          type: integer
+          description: ID of the task to mark as complete
+          example: 456
+
+    CompleteTaskOutput:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+        - completed
+      properties:
+        task_id:
+          type: integer
+          description: ID of the completed task
+          example: 456
+        status:
+          type: string
+          enum: [completed]
+          description: Operation status
+          example: "completed"
+        title:
+          type: string
+          description: Task title (confirmation)
+          example: "Buy groceries"
+        completed:
+          type: boolean
+          description: Completion status (always true)
+          example: true
+
+    # Tool: delete_task
+    DeleteTaskInput:
+      type: object
+      required:
+        - user_id
+        - task_id
+      properties:
+        user_id:
+          type: string
+          description: Authenticated user's ID
+          example: "user_123"
+        task_id:
+          type: integer
+          description: ID of the task to delete
+          example: 456
+
+    DeleteTaskOutput:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          description: ID of the deleted task
+          example: 456
+        status:
+          type: string
+          enum: [deleted]
+          description: Operation status
+          example: "deleted"
+        title:
+          type: string
+          description: Task title (confirmation)
+          example: "Buy groceries"
+
+    # Tool: update_task
+    UpdateTaskInput:
+      type: object
+      required:
+        - user_id
+        - task_id
+      properties:
+        user_id:
+          type: string
+          description: Authenticated user's ID
+          example: "user_123"
+        task_id:
+          type: integer
+          description: ID of the task to update
+          example: 456
+        title:
+          type: string
+          description: New task title (optional)
+          minLength: 1
+          maxLength: 200
+          example: "Buy groceries and fruits"
+        description:
+          type: string
+          description: New task description (optional)
+          maxLength: 1000
+          example: "Milk, eggs, bread, apples, bananas"
+
+    UpdateTaskOutput:
+      type: object
+      required:
+        - task_id
+        - status
+        - title
+      properties:
+        task_id:
+          type: integer
+          description: ID of the updated task
+          example: 456
+        status:
+          type: string
+          enum: [updated]
+          description: Operation status
+          example: "updated"
+        title:
+          type: string
+          description: Updated task title
+          example: "Buy groceries and fruits"
+        description:
+          type: string
+          description: Updated task description (if provided)
+          example: "Milk, eggs, bread, apples, bananas"
+
+    # Shared schemas
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - completed
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Task ID
+          example: 456
+        title:
+          type: string
+          description: Task title
+          example: "Buy groceries"
+        description:
+          type: string
+          description: Task description (optional)
+          example: "Milk, eggs, bread"
+        completed:
+          type: boolean
+          description: Completion status
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation timestamp
+          example: "2026-02-08T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2026-02-08T10:00:00Z"
+
+    # Error schemas
+    ToolError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+          enum:
+            - TaskNotFound
+            - InvalidParameters
+            - DatabaseError
+            - UnauthorizedAccess
+          example: "TaskNotFound"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Task with ID 456 not found"
+        details:
+          type: object
+          description: Additional error context
+          additionalProperties: true
+
+# MCP Tool Definitions
+tools:
+  add_task:
+    name: add_task
+    description: Create a new task for the user
+    input_schema:
+      $ref: '#/components/schemas/AddTaskInput'
+    output_schema:
+      $ref: '#/components/schemas/AddTaskOutput'
+    error_schema:
+      $ref: '#/components/schemas/ToolError'
+    examples:
+      - name: Simple task
+        input:
+          user_id: "user_123"
+          title: "Buy groceries"
+        output:
+          task_id: 456
+          status: "created"
+          title: "Buy groceries"
+      - name: Task with description
+        input:
+          user_id: "user_123"
+          title: "Review PR"
+          description: "Check authentication changes"
+        output:
+          task_id: 457
+          status: "created"
+          title: "Review PR"
+
+  list_tasks:
+    name: list_tasks
+    description: Retrieve tasks from the user's list
+    input_schema:
+      $ref: '#/components/schemas/ListTasksInput'
+    output_schema:
+      $ref: '#/components/schemas/ListTasksOutput'
+    error_schema:
+      $ref: '#/components/schemas/ToolError'
+    examples:
+      - name: All tasks
+        input:
+          user_id: "user_123"
+          status: "all"
+        output:
+          tasks:
+            - id: 456
+              title: "Buy groceries"
+              completed: false
+              created_at: "2026-02-08T10:00:00Z"
+              updated_at: "2026-02-08T10:00:00Z"
+            - id: 457
+              title: "Call mom"
+              completed: true
+              created_at: "2026-02-07T15:00:00Z"
+              updated_at: "2026-02-08T09:00:00Z"
+          count: 2
+      - name: Pending tasks only
+        input:
+          user_id: "user_123"
+          status: "pending"
+        output:
+          tasks:
+            - id: 456
+              title: "Buy groceries"
+              completed: false
+              created_at: "2026-02-08T10:00:00Z"
+              updated_at: "2026-02-08T10:00:00Z"
+          count: 1
+
+  complete_task:
+    name: complete_task
+    description: Mark a task as complete
+    input_schema:
+      $ref: '#/components/schemas/CompleteTaskInput'
+    output_schema:
+      $ref: '#/components/schemas/CompleteTaskOutput'
+    error_schema:
+      $ref: '#/components/schemas/ToolError'
+    examples:
+      - name: Complete task
+        input:
+          user_id: "user_123"
+          task_id: 456
+        output:
+          task_id: 456
+          status: "completed"
+          title: "Buy groceries"
+          completed: true
+      - name: Task not found error
+        input:
+          user_id: "user_123"
+          task_id: 999
+        error:
+          error: "TaskNotFound"
+          message: "Task with ID 999 not found"
+
+  delete_task:
+    name: delete_task
+    description: Remove a task from the user's list
+    input_schema:
+      $ref: '#/components/schemas/DeleteTaskInput'
+    output_schema:
+      $ref: '#/components/schemas/DeleteTaskOutput'
+    error_schema:
+      $ref: '#/components/schemas/ToolError'
+    examples:
+      - name: Delete task
+        input:
+          user_id: "user_123"
+          task_id: 456
+        output:
+          task_id: 456
+          status: "deleted"
+          title: "Buy groceries"
+      - name: Unauthorized access error
+        input:
+          user_id: "user_123"
+          task_id: 789
+        error:
+          error: "UnauthorizedAccess"
+          message: "Task 789 does not belong to user user_123"
+
+  update_task:
+    name: update_task
+    description: Modify task title or description
+    input_schema:
+      $ref: '#/components/schemas/UpdateTaskInput'
+    output_schema:
+      $ref: '#/components/schemas/UpdateTaskOutput'
+    error_schema:
+      $ref: '#/components/schemas/ToolError'
+    examples:
+      - name: Update title
+        input:
+          user_id: "user_123"
+          task_id: 456
+          title: "Buy groceries and fruits"
+        output:
+          task_id: 456
+          status: "updated"
+          title: "Buy groceries and fruits"
+      - name: Update title and description
+        input:
+          user_id: "user_123"
+          task_id: 456
+          title: "Buy groceries and fruits"
+          description: "Milk, eggs, bread, apples, bananas"
+        output:
+          task_id: 456
+          status: "updated"
+          title: "Buy groceries and fruits"
+          description: "Milk, eggs, bread, apples, bananas"
