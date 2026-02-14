@@ -12,7 +12,7 @@ import { Label } from '@/src/components/ui/Label';
 import { GradientBackground } from '@/src/components/auth/GradientBackground';
 import { AuthForm } from '@/src/components/auth/AuthForm';
 import { GradientButton } from '@/src/components/auth/GradientButton';
-import { apiClient, type LoginResponse } from '@/src/lib/api-client';
+import { apiClient, type LoginResponse } from '@/lib/api-client';
 import {
   Form,
   FormControl,
